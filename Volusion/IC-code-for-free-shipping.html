@@ -1,0 +1,167 @@
+<!--
+******************************************************************
+//		 Please modify css here according to your store's  		//
+//			  theme to show the Ic page on full width			//
+******************************************************************
+-->
+<style>
+#content_wrapper{
+	background:none;
+	width:100%;
+}
+#content, #content_area{
+	background:none;
+	/*width:100%;*/
+}
+#content_top{
+	background:none;
+}
+#left_nav, .leftNav, #leftNav{
+	display:none;
+    width:0px;
+}
+</style>
+<script type="text/javascript">
+	var pValue = "pixlkraft"; //Please set the p value of store provided by International Checkout
+	var shippingCharges = ""; //Please set the numeric value in the case of Flar Rate Shipping Charges e.g 10.95
+	var shippingMethod = "";  //Please type "Flat Rate" for flat rate shipping charges
+	var strVar = "";
+	var productPrice;
+	var productImageSource = "";
+	var itemPrice = "";
+	var index = 1;
+	var host = "";
+	var products;
+	var icFormElements = ['ItemImage', 'ItemDescription', 'ItemSKU', 'ItemQuantity', 'ItemPrice']; // Build array for icForm elements names
+	var icFormElementsValue = new Array();
+
+	jQuery(document).ready(function () {
+		makeform();
+	});
+//*****************************************************************************************************//
+//      Function to get products from cart session located on /AjaxCart.asp page by Volusion 		   //
+//*****************************************************************************************************//
+function makeform() {
+	var url = '/AjaxCart.asp';
+	var currentUrl = window.location.href;
+	var urlAux = currentUrl.split('/');
+	host = urlAux[2];
+	
+		jQuery.support.cors = true;
+		jQuery.ajax({
+			type: "GET",
+			url: url,
+			crossDomain:true,
+			async: false,
+			cache:false,
+			beforeSend: function(x) {
+				if(x && x.overrideMimeType) {
+					x.overrideMimeType("application/j-son;charset=UTF-8");
+				}
+			},
+			dataType: "json",
+			success: function(json){
+
+				if (json && json['Totals'] && json['Totals'][0] && json['Totals'][0]['Quantity']) {
+					var CurrentQuantity = json['Totals'][0]['Quantity'] - 0;
+					if (CurrentQuantity == 0 && instance.DeleteItemComplete == false) { // To check empty cart
+						return false;
+					}
+					var CartTotal = json['Totals'][0]['CartTotal'].replace('$','');
+                    var DiscountTotal = json['Totals'][0]['DiscountTotal'].replace('-$','');
+					products = json['Products'];
+					for (var i=0; i<products.length; i++) {
+						product = products[i];
+						getProductDetailsResponse(product, CartTotal, DiscountTotal); // Send product array to build IC form
+					}
+				}else{
+					alert('There are no products in your cart.');
+					window.parent.location.href = '/ShoppingCart.asp?';
+				}
+			},
+			error:function () {
+				return false;
+			}
+		});
+	
+}
+//*****************************************************************************************************//
+//  Function to build product information for International Checkout cart got from /AjaxCart.asp page  //
+//*****************************************************************************************************//
+function getProductDetailsResponse(response, CartTotal, DiscountTotal) {
+	
+	if(response['ProductName'] != ''){
+		
+		// Check for Gift Certificate 
+		if(response['ProductName'].search(/Gift Certificate/i) == '-1' && response['ProductName'].search(/Gift Cards/i) == '-1' ){
+
+			productPrice = response['ProductPrice'].replace(/,/gi, "").replace("$", ""); // Remove , and $ from price
+
+			if(productPrice.search(/-/i) == '-1'){
+				// Cross the browser check to get the url of image  
+				if(response['ImageSource'].search('/v/') == 0){
+					productImageSource = 'https://' + host + response['ImageSource']; // To get url in IE 
+				}else{
+					productImageSource = 'https:' + response['ImageSource']; // Other Browsers
+				}
+				var quantity = parseFloat(response['Quantity']);
+				itemPrice = (productPrice / quantity).toFixed(2);
+				// Build array for icForm elements values
+				icFormElementsValue = [productImageSource, formatAll(response['ProductName']), response['ProductCode'], response['Quantity'], itemPrice];
+				
+				for(var cnt=0; cnt<icFormElements.length; cnt++){
+					strVar += createFormElement(icFormElements[cnt], index, icFormElementsValue[cnt]);	
+				}
+			}
+			if (index == products.length) {
+				strVar += createFormElement('shipping_method', index='', shippingMethod);
+				strVar += createFormElement('external_domesticshipping', index='', shippingCharges);
+				var $el = jQuery('.p');
+				$el.val(pValue)
+				$el.before(strVar);
+				// Attach Iframe to document to load IC cart page
+				jQuery("#loading").after('<iframe style="display:none; min-height:1150" name="icIframe" id="icIframe" src="javascript:parent.getFrameHTML()" frameborder="0" align="center" width="100%" scrolling="auto" height="1150">Your Browser Does Not upport Frames</iframe>');
+				
+				document.getElementById('icIframe').src = "https://www.internationalcheckout.com/cart.php?ver="+Math.random(); //A fix for cache 
+				document.getElementById('icForm').submit();
+
+				jQuery('#icIframe').ready(function(){
+					// Set a time interval to laod iframe, remove Ic Form and hide Loading text.	
+				     setTimeout(function() {
+						jQuery("#icIframe").css("display","block");
+						jQuery("#loading").css("display","none");
+						jQuery("#icForm").remove();
+					}, 5000);
+		
+				});
+			}
+			index++;
+		}else 
+		<!--Gift Certificate is not available for international orders so send the control back to cart page-->
+		if(product['ProductName'].search(/Gift Certificate/i) != -1 || product['ProductName'].search(/Gift Cards/i) != -1){ 
+			alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout');
+			window.parent.location.href = '/ShoppingCart.asp?';
+		}
+	}else{
+		alert('There are no products in your cart.');
+		window.parent.location.href = '/ShoppingCart.asp?';
+	}
+}
+function formatAll(txt){
+	txt = replaceAll(txt,'&quot;',"&#39;&#39;"); // &#39; [double qoutes] &#34; [Single qoute] in ISO 8859-1 Codes
+	return txt;
+}
+function replaceAll(str,findWhat,replaceWith) {
+	while(indexCnt=str.indexOf(findWhat) !=-1) {
+		str = str.replace(findWhat,replaceWith);
+	}
+	return str;
+}
+function createFormElement(name, index, value){
+	return '<input type="hidden" name="' + name + index + '" value="' + value + '"/>';
+}
+</script>
+<div style=" width:100%;height:500px; text-align:center; font-size:12px" id="loading" align="center">Loading......</div>
+<form style="float:right" name="icForm" id="icForm" method="post" action="https://www.internationalcheckout.com/cart.php" target="icIframe">
+	<input name="p" class="p" value="" type="hidden"/>
+</form>

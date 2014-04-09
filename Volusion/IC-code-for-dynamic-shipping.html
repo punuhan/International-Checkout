@@ -1,0 +1,314 @@
+<script TYPE="text/javascript">
+    //$("#content").css("width", "115%");
+	//$("#content").css("position", "relative");
+	//$("#content").css("right", "12.32%");
+    //$("#content").css("background", "none");
+    $("#content_area table").css("width", "135%");
+    $("#leftnav").css("display","none");
+	//$("#content_area").css("float", "left");
+	
+	var productCode = "";
+	var strVar = "";
+	var productName = "";
+	var productPrice;
+	var productQuantity = "";
+	var productImageSource = "";
+	var itemprice = "";
+	var index = 1;
+	var host;
+	var products;
+	$(document).ready(function () {
+		
+		estimateICShipping();
+	});
+function makeform(ProductDescription, ProductAttribute) {
+	var url = '/AjaxCart.asp';
+	var currentUrl = window.location.href;
+	var urlAux = currentUrl.split('/');
+	host = urlAux[2];
+	if (navigator.userAgent.match(/msie/i)){
+		jQuery.support.cors = true;
+		$.ajax({
+			type: "GET",
+			url: url,
+			crossDomain:true,
+			async: false,
+			cache:false,
+			beforeSend: function(x) {
+				if(x && x.overrideMimeType) {
+					x.overrideMimeType("application/j-son;charset=UTF-8");
+				}
+			},
+			dataType: "json",
+			success: function(data){
+				var json = data;
+				if (json && json['Totals'] && json['Totals'][0] && json['Totals'][0]['Quantity']) {
+					var CurrentQuantity = json['Totals'][0]['Quantity'] - 0;
+					if (CurrentQuantity == 0 && instance.DeleteItemComplete == false) {
+						return false;
+					}
+					var CartTotal = json['Totals'][0]['CartTotal'].replace('$','');
+					var DiscountTotal = json['Totals'][0]['DiscountTotal'].replace('-$',''); 
+					products = json['Products'];
+					for (var i=0; i<products.length; i++) {
+						product = products[i];
+						getProductDetailsResponse(product, CartTotal, DiscountTotal, ProductDescription, ProductAttribute);
+					}
+				}
+			}
+		});
+	}else{
+		jQuery.ajax({
+			url:url,
+			cache:false,
+			dataType:'json',
+			crossDomain:true,
+			success:function (data, textStatus, XMLHttpRequest) {
+				var json = data;
+				if (json && json['Totals'] && json['Totals'][0] && json['Totals'][0]['Quantity']) {
+					var CurrentQuantity = json['Totals'][0]['Quantity'] - 0;
+					if (CurrentQuantity == 0 && instance.DeleteItemComplete == false) {
+						return false;
+					}
+					var CartTotal = json['Totals'][0]['CartTotal'].replace('$','');
+					var DiscountTotal = json['Totals'][0]['DiscountTotal'].replace('-$',''); 
+					products = json['Products'];
+					for (var i in products) {
+						product = products[i];
+						getProductDetailsResponse(product, CartTotal, DiscountTotal, ProductDescription, ProductAttribute);
+					}
+				}
+			},
+			error:function () {
+				return false;
+			}
+		});
+	}
+}
+function getProductDetailsResponse(response, CartTotal, DiscountTotal, ProductDescription, ProductAttribute) {
+	if(response['ProductName'] != ''){
+		//console.log(ProductDescription.length);
+		for(var k=0;  k < ProductDescription.length; k++){
+			//console.log(ProductAttribute[k]);
+			//console.log(response['ProductCode']);
+			if(ProductAttribute[k] == response['ProductCode']){
+				//console.log(ProductAttribute[k]);	
+			}	
+		}
+		productCode = response['ProductCode'];
+		productName = formatAll(response['ProductName']);
+		productPrice = response['ProductPrice'].replace(",", "").replace("$", "");
+		productQuantity = response['Quantity'];
+		productImageSource = response['ImageSource'];
+		if(productImageSource.search('/v/') == 0){var productImageSource = 'https://' + host + productImageSource;}else{var productImageSource = 'https:' + productImageSource;}
+		var quantity = parseFloat(productQuantity);
+		itemprice = (productPrice / quantity).toFixed(2);
+		if(response['ProductName'].search(/Gift Certificate/i) == '-1' ){
+			if(productPrice.search(/-/i) == '-1'){
+				strVar += "<input type=\"hidden\" name=\"ItemSKU" + index + "\" value=\"" + productCode + "\"     />";
+				strVar += "<input type=\"hidden\" name=\"ItemImage" + index + "\" value=\"" + productImageSource + "\" > " + "<input type=\"hidden\" name=\"ItemDescription" + index + "\" value=\"" + productName + "\" >";
+				strVar += "<input type=\"hidden\" name=\"ItemQuantity" + index + "\" value=\"" + productQuantity + "\" >";
+				strVar += "<input type=\"hidden\" name=\"ItemPrice" + index + "\" value=\"" + itemprice + "\" >";
+			}
+			if (index == products.length) {
+				if(productPrice.search(/-/i) != '-1' ){
+					var couponCodeTitle = $("#couponCodeTitle").val();
+					var couponCode = $("#couponCode").val();
+					var couponCodeDiscount = '';
+					DiscountTotal = DiscountTotal.replace("-","");
+					DiscountTotal = parseFloat(DiscountTotal );
+					if((couponCodeTitle && couponCode ) && productName == couponCodeTitle ){
+						couponCodeDiscount = productPrice.replace("-","");
+						if(couponCodeDiscount != ''){couponCodeDiscount = parseFloat(couponCodeDiscount);}else{couponCodeDiscount = 0;}
+						strVar += "<input type=\"hidden\" id=\"coupon_code\" name=\"coupon_code\"  value=\"" + couponCode + "\">";
+
+
+						if(DiscountTotal > couponCodeDiscount){
+							strVar += "<input type=\"hidden\" name=\"coupon_discount\"  value=\"\">";
+						}else{
+							strVar += "<input type=\"hidden\" name=\"coupon_discount\"  value=\"" + couponCodeDiscount + "\">";
+						}
+					}
+					//console.log(DiscountTotal);
+					//console.log(couponCodeDiscount);
+					if(DiscountTotal > couponCodeDiscount){
+						strVar += "<input type=\"hidden\" name=\"Discount\"  value=\"" + DiscountTotal + "\">";
+					}
+				}
+				var $el = $('.p');
+				$el.before(strVar);
+                
+				$("#loading").after('<iframe style="min-height:1150" name="icIframe" id="icIframe" src="javascript:parent.getFrameHTML();" frameborder="0" align="center" width="100%" scrolling="auto" height="1150">Your Browser Does Not upport Frames</iframe>');
+				document.getElementById('icIframe').src = "";
+				document.getElementById('icIframe').src = "https://www.internationalcheckout.com/cart.php?ver="+Math.random();
+				document.getElementById('icForm').submit();
+
+				$('#icIframe').load(function () {
+					$("#ju_Con").css("display","none"); 
+					$("#icForm").remove();
+					$("#loading").css("display","none");
+					$("#icIframe").css("display","block");
+				});
+			}
+			index++;
+		}else if(product['ProductName'].search(/Gift Certificate/i) != -1){ <!--Gift Certificate is not available for international orders so send the control back to cart page-->
+			alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout');
+			window.parent.location.href = '/ShoppingCart.asp?';
+		}
+	}
+}
+var recursiveCounter = 0;
+function estimateICShipping() {
+	   shipping_price = '';
+	   shipping_method = '';
+	   if(recursiveCounter > 10){
+			return;
+		}
+	   jQuery.ajax({
+			url: 'ShoppingCart.asp',
+			type: 'post',
+			cache:false,
+			data: {
+				ShipCountry: 'United States',
+				ShipState_dropdown: 'CA',
+				ShipState_Required: 'Y',
+				ShipState : 'CA',
+				stateName: '',
+				ShipPostalCode: 91406,
+				ShipResidential: 'N',
+				Quantity1: '1'
+			},
+			success: function(responseData)
+			{
+				//*********************************************************//
+				// Get product attributes using poduct code.
+				//*********************************************************//
+				var ItemsRows = jQuery(responseData).find("#v65-cart-table >tbody >tr.v65-cart-details-row");
+				var ProductCodeArr = new Array();
+				var ProductDescription = new Array();
+				var ProductAttribute = new Array();
+				jQuery(ItemsRows).each(function(index) {
+					
+					if(index == (ItemsRows.length - 3)){
+						return false;
+					}
+					var CurrentRow = ItemsRows[index];
+					var ProductCodeHref = jQuery(this).find("a[href^=ProductDetails.asp?ProductCode=]");
+					jQuery(ProductCodeHref[0].attributes).each(function(index1) {
+						if(index1 == "1"){
+							ProductCodeString = decodeURIComponent(this.value); // split in Array
+							//console.log(index1);
+							ProductCode = ProductCodeString.split("&");
+							ProductCodeArr = ProductCode[0].split("ProductCode=");
+							//console.log(ProductCodeArr[0]); 
+	
+							ProductDescription = jQuery.trim(jQuery(CurrentRow).find("a[href^=ProductDetails.asp?ProductCode=]").parent().text());
+							strVar += "<input type=\"hidden\" name=\"ItemDescription" + (index +1) + "\" value=\"" + ProductDescription + "\"     />";
+							ProductAttribute = jQuery.trim(ProductCodeArr[1]);
+							console.log(ProductAttribute);
+							//console.log(jQuery.trim(CurrentRow).find("a[href^=ProductDetails.asp?ProductCode=]").parent().text());
+				
+						}
+					});
+					
+				});
+console.log(ProductDescription.length);
+console.log(ProductAttribute.length);
+
+				//*********************************************************//
+				// Coupon code and coupon discount extraction from cart page.
+				//*********************************************************//
+				var CouponCodeData = jQuery(responseData).find(".v65-cart-giftcert-details-row");
+				if(CouponCodeData[0]!=undefined){
+					var couponCodeTitle = CouponCodeData.find(".v65-cart-giftcert-details.v65-cart-details-font b").text().split("[");
+					couponCodeTitle = couponCodeTitle[1].replace("]", ""); 
+
+					var couponCode = CouponCodeData.find(".v65-cart-giftcert-total font.carttext.colors_text").text().replace("-", "").replace("$", "");
+					
+					strVar += "<input type=\"hidden\" id=\"couponCodeTitle\" name=\"couponCodeTitle\"  value=\"" + couponCodeTitle + "\">";
+					strVar += "<input type=\"hidden\" id=\"couponCode\" name=\"couponCode\"  value=\"" + couponCode[1] + "\">";
+				}	
+				
+				var ShippingData = jQuery(responseData).find("select[name^=ShippingSpeedChoice]").parent().html();
+				if(ShippingData){				// If the obtained data contains the shipping method in the combo box. 
+					if(ShippingData.search("PLEASE SELECT")){ 
+						ShippingData = ShippingData.replace("PLEASE SELECT</option>",""); // remove first option
+					}
+					if(ShippingData.search("In Store Pickup")){ 
+						ShippingData = ShippingData.replace("In Store Pickup ",""); // remove first option
+					}
+					if(navigator.appVersion.indexOf("MSIE 8.")!= -1 || navigator.appVersion.indexOf("MSIE 7.")!= -1 ){
+						ShippingData = ShippingData.replace(/<\/OPTION>/g, "_"); // replace all </option> with newline					
+					}else{
+						ShippingData = ShippingData.replace(/<\/option>/g, "_"); // replace all </option> with newline					
+					}
+					ShippingData = ShippingData.replace(/<.*?>/g,""); // remove all other tags
+					ShippingData = ShippingData.replace(/^\s+/g,""); // remove spaces at the beginning of lines
+					shippingOptionsArray = ShippingData.split("_"); // split in Array
+					shippingOptionsArray.pop();
+					var shippingAmountArray = new Array();
+					var shippingMethodArray = new Array();
+					var d = 0;
+					for(var k=0;  k < shippingOptionsArray.length; k++){
+						 if(shippingOptionsArray[k].search(/free/i) != '-1'){ // Search for free shipping method
+							shipping_method = shippingOptionsArray[k];
+							shipping_price = '';
+							break;
+						 }else{										// Parse the amount and the shipping method.
+							if(shippingOptionsArray[k].search(/$/i) != '-1'){
+									shippingValuesArray = shippingOptionsArray[k].split("$");
+									if(shippingValuesArray[1] ){
+										shippingMethodArray[d] = shippingValuesArray[0];
+										shippingAmountArray[d] = shippingValuesArray[1];
+										d++;
+									}
+							}
+						 }
+					}
+					// Get the lowest shipping price and method from all options.
+					if(shippingAmountArray.length > 0){
+						sortedArray = shippingAmountArray.sort(function(a,b){return a - b});		// Sort the shipping price from low to high.
+						// Find the index of low price in the array
+						for(var k=0;  k < sortedArray.length; k++){
+							if(sortedArray[0] == shippingAmountArray[k]){
+								break;
+							}
+						}
+						shipping_method = shippingMethodArray[k];	
+						shipping_price = shippingAmountArray[k];
+						shipping_price = replaceAll(shipping_price, ',', '');
+					}
+					strVar += "<input type=\"hidden\" class=\"shipping_method\" name=\"shipping_method" + "\" value=\"" + shipping_method + "\" >";
+					strVar += "<input type=\"hidden\" class=\"external_domesticshipping\" id=\"external_domesticshipping\" name=\"external_domesticshipping" + "\" value=\"" + shipping_price + "\" >";
+					var $el = $('.p');
+					$el.before(strVar);
+					makeform(ProductDescription, ProductAttribute);
+                  }else if(responseData.search('There are no items in your shopping cart') != '-1'){
+						alert('There are no products in your cart.');
+						window.parent.location.href = '/ShoppingCart.asp?';
+				}else{
+					recursiveCounter++;
+					estimateICShipping();
+				}
+			}
+		});
+}
+function formatAll(txt){
+	txt = replaceAll(txt,"'","&#39;");
+	txt = replaceAll(txt,'&quot;',"&#39;&#39;"); // &#39;&#34; for ISO 8859-1 Codes
+	return txt;
+}
+function replaceAll(str,findWhat,replaceWith) {
+	while(indexCnt=str.indexOf(findWhat) !=-1) {
+		str = str.replace(findWhat,replaceWith);
+	}
+	return str;
+}
+</script>
+<div STYLE=" width:100%;height:500px; text-align:center; font-size:12px" id="loading" ALIGN="center">
+	Loading......
+</div>
+<form STYLE="float:right" name="icForm" id="icForm" METHOD="post" ACTION="https://www.internationalcheckout.com/cart.php" TARGET="icIframe">
+	<input name="p" CLASS="p" VALUE="pitchingmachinepro" TYPE="hidden"/>
+	<!--Replace with your store's p value-->
+</form>
