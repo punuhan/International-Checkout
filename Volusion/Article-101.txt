@@ -8,6 +8,6 @@
 		<br/>by clicking the <strong>International Checkout</strong> button
 	</div>
 	<div style="float:right">
-		<a href="/Articles.asp?ID=251" id="ICCheckoutButton"><img style="padding: 0px; position: relative; bottom: 5px;" src="https://www.internationalcheckout.com/images/international-checkout_2.png" border="0"/></a>
+		<a href="/Articles.asp?ID=ARTICLE_ID" id="ICCheckoutButton"><img style="padding: 0px; position: relative; bottom: 5px;" src="https://www.internationalcheckout.com/images/international-checkout_2.png" border="0"/></a>
 	</div>
 </div>

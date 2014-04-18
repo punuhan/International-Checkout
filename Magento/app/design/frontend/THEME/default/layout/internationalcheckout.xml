@@ -19,6 +19,15 @@
 		</reference>
 	</checkout_onepage_index>   
 	-->
+	<!--Remove comments from below code if you want to show International Checkout button on Gomage One Page Checkout-->
+	<!--    
+	<gomage_checkout_onepage_index> 
+       <reference name="content">
+						<block type="internationalcheckout/international" name="internationalcheckout.onepage" template="internationalcheckout/ic_button_on_onepage.phtml"/>
+		</reference>
+	</gomage_checkout_onepage_index>   
+	-->
+
 	<internationalcheckout_index_index>
 		<reference name="root">
 			<action method="setTemplate"><template>page/1column.phtml</template></action>
