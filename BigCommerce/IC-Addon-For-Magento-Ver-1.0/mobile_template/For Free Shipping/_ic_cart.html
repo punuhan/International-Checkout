@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+%%Panel.HTMLHead%%
+<body>
+<script type="text/javascript" src="%%GLOBAL_ShopPath%%/javascript/cart.js?%%GLOBAL_JSCacheToken%%"></script>
+<div id="Container">
+    %%Panel.Header%%
+	%%Panel.CartHeader%%
+    %%Panel.CartStatusMessage%%
+    %%Panel.CartContent%%
+    <div id="Wrapper">
+        %%Panel.WrapperBanner%%
+        <!--Starts International Checkout integration code-->
+        <div style="display:none" id="noCart"><p class="InfoMessage"><strong>There are no products in your cart.</strong></p><br><br><a href="/">Continue Shopping</a>.</div>
+        <div>
+	        <div style=" width:100%; text-align:center; font-size:12px;height:500px" align="center" id="loading">Loading......</div>
+            <form id="icForm" name="icFrom" action="https://www.internationalcheckout.com/cart.php" class="icForm" method="post" target="icIframe"></form>
+            <div class="IC" id="IC" style="display: none;"></div>
+            <div class="IC_sucess" id="IC_sucess" style="display: none;"></div>
+        </div>
+    </div>
+    <!--
+    ******************************************************************
+    //		 Please modify css here according to your store's  		//
+    //			  theme to show the Ic page on full width			//
+    ******************************************************************
+    -->
+    <style>
+	.CartContents Stylize General, #content, #CartHeader, #CartContent, .BlockContent, #Outer p{
+		display:none;
+	}
+	</style>
+    
+    <!--Starts International Checkout integration code-->
+    <script type="text/javascript">
+
+		var pValue = "yourhealth"; //Please set the p value of store provided by International Checkout
+
+        $(document).ready(function() {
+
+                count=0;
+				var totalPrice = 0;
+                $('.CartList >li').each(function() {
+                    count=count+1;
+				
+					// Code to check Gift Card in Cart
+					if(jQuery(this).find("div.ProductDetails").text().replace(/<.*?>/g, "").search('Gift Certificate') != -1){
+						GiftCertInCart = true;
+						return false;
+					}
+					
+                    // Code starts for product attributes
+                    attributes ='';
+                    if($(this).find('table').hasClass('productAttributes')){
+                        attributes ='';
+                        $(this).find('tbody >tr').each(function() {
+                            
+                            $(this).find('td').each(function() {
+                                if($(this).find('label')){
+                                    temp='';
+                                    if($(this).find('label').html()!=null){
+                                        temp =  $(this).find('label').html().replace(/[^a-zA-Z 0-9]+/g,'');
+                                        //if(temp!='Size' && temp!='Color'){
+                                            attr_value = $(this).next().find('span').html().replace(/"/gi, "&rdquo;");
+                                            attr_value = attr_value.replace(/'/gi, "&acute;");
+                                            attributes = attributes + '&nbsp;['+temp+':'+attr_value+']';
+                                        //}
+                                    }
+                                    if(temp.search('Size') != -1 ){
+                                        attr_value = $(this).next().find('span').html().replace(/"/gi, "&rdquo;");
+                                        attr_value = attr_value.replace(/'/gi, "&acute;");
+                                        $('#icForm').append('<input id="ItemSize'+count+'" name="ItemSize'+count+'" type="hidden" value="'+attr_value+'" />');
+                                    }
+                                    
+                                    if(temp.search('Color') != -1){
+                                        $('#icForm').append('<input id="ItemColor'+count+'" name="ItemColor'+count+'" type="hidden" value="'+$(this).next().find('span').html().replace(/"/gi, "&rdquo;")+'" />');
+                                    }
+                                }
+                            });
+                        });
+                    }
+                    // Code endss for product attributes
+                    // Product Description
+                    jQuery("#icForm").append("<input type=hidden name=ItemDescription" + count + ' value="' + formatAll(jQuery(this).find("div.ProductDetails strong a").text().replace(/<.*?>/g, "")) + attributes + '">');
+					//Product Image
+                    var image = jQuery(this).find("div.ProductImage a img").attr("src");
+					if(image.search('https') == -1){image = image.replace('http', 'https');}
+					jQuery("#icForm").append("<input type=hidden name=ItemImage" + count + " value=" +  image + ">");
+					//Product Quantity 
+                    jQuery("#icForm").append("<input type=hidden name=ItemQuantity" + count + " value=" + parseInt(jQuery(this).find("select option:selected").val()) + ">");
+					//Product Pice
+                    jQuery("#icForm").append("<input type=hidden name=ItemPrice" + count + " value=" + parseFloat(jQuery(this).find("div.CartItemPrice em.ProductPrice").text().replace("$", "")) + ">");
+					// Cart Status
+                    jQuery("#icForm").append('<input type="hidden" class="cartStatus" name="cartStatus" value="1" />');
+            	});
+                if(count >0){
+                    $('#icForm').append('<input id="p" name="p" type="hidden" value="' + pValue +'" />'); /*Set the p value of your store*/
+					//-------------------------------------**************************--------------------------------//
+					//		Activate this code if store is willing to pass coupon codes to International Checkout    //
+					//-------------------------------------**************************--------------------------------//		 
+                    /*var coupon_code = '';
+                    var coupon_discount = '';
+                    if( $("td:contains('Coupon')").html() ){
+                        coupon_code = $("td:contains('Coupon')").html().split(")");
+                        coupon_code = coupon_code[0].split("(");
+                        coupon_code = coupon_code[1];
+                        coupon_value = $("td:contains('Coupon')").next().html();
+                        coupon_value = coupon_value.split("$");
+                        coupon_discount = '-'+coupon_value[1];
+                    }
+                    if(coupon_code != '' && coupon_discount != ''){
+                        $('#icForm').append('<input id="coupon_code" name="coupon_code" type="hidden" value="'+coupon_code+'" />');
+                        $('#icForm').append('<input id="coupon_discount" name="coupon_discount" type="hidden" value="'+coupon_discount+'" />');
+                    }*/
+					//-------------------------------------Ends Coupon Code Support Coding--------------------------------//
+					$('#icForm').append('<input id="external_domesticshipping" name="external_domesticshipping" type="hidden" value="" />');
+					$('#icForm').append('<input id="shipping_method" name="shipping_method" type="hidden" value="" />');
+					
+					if($('#icForm').html()!='' && $(".giftCard") && $(".giftCard").val() != '1'){
+						$("#Wrapper").append('<iframe style="display:none; min-height:850" name="icIframe" id="icIframe" src="javascript:parent.getFrameHTML();" frameborder="0" align="center" width="100%" scrolling="auto" height="850">Your Browser Does Not upport Frames</iframe>');
+						document.getElementById('icForm').submit();
+						$('#icIframe').ready(function(){
+							// Set a time interval to laod iframe, remove Ic Form and hide Loading text.	
+							 setTimeout(function() {
+								$("#icIframe").css("display","block");
+								$("#loading").css("display","none");
+								$("#icForm").remove();
+							}, 5000);
+				
+						});
+					}else if($(".giftCard") && $(".giftCard").val() == '1'){
+						alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout.'); 
+						window.parent.location.href = '/cart.php'; 
+					}else{
+						alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout.');
+						window.parent.location.href = '/cart.php';}  
+          		}else{
+					$('#noCart').css("display","block");
+					$('#loading').css("display","none");
+				}
+        });
+	function formatAll(txt){
+		txt = replaceAll(txt,"'","&acute;");
+		txt = replaceAll(txt,'"',"&acute;&acute;");
+		return txt;
+	}
+	function replaceAll(str,findWhat,replaceWith) {
+		while(indexCnt=str.indexOf(findWhat) !=-1) {
+			str = str.replace(findWhat,replaceWith);
+		}
+		return str;
+	}
+	</script>
+    <!--Ends International Checkout integration code-->
+    %%Panel.Footer%%
+</div>
+</body>
+</html>

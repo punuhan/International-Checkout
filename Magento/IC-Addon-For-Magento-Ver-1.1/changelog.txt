@@ -1,0 +1,13 @@
+1.1 - 8/22/2014 
+
+
+fixes:
+	
+-fixed  
+
+
+
+changes:
+	
+-Added code to get child product images if product image is not available.
+-Added code to get product price without tax.

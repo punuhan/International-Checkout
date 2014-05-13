@@ -451,5 +451,77 @@ class Ic_InternationalCheckout_Block_International extends Mage_Core_Block_Templ
 	}
 	
 	
+	function shippingPriceModified() {
+
+		$session = Mage::getSingleton('checkout/session');
+		$quote = $session->getQuote();
+			
+		$bkCountryId = $quote->getCountryId();
+		$bkCity = $quote->getCity();
+		$bkPostcode = $quote->getPostcode();
+		$bkRegionId = $quote->getRegionId();
+		$bkRegion = $quote->getRegion();
+	
+
+		$quote->getShippingAddress()->setCountryId("US")
+				->setCity("California")
+				->setPostcode("91406")
+				->setRegionId("")
+				->setRegion("")
+				->setCollectShippingRates(true)->collectShippingRates();
+				
+		$shippingCarrierMethodArr = explode("_",Mage::getStoreConfig('checkout/internationalcheckout/shipping_method'));
+		$shippingCarrier = $shippingCarrierMethodArr[0];
+		$shippingMethod = $shippingCarrierMethodArr[1];
+		$carriers[$shippingCarrier] = '';
+		$price = 0;
+		
+		if ($shippingCarrier == "freedomesticshippingtoic" && $shippingMethod == "freedomesticshippingtoic") {
+			return $price;
+		}
+
+	
+		$quote->getShippingAddress()->collectTotals();
+		$quote->getShippingAddress()->setCollectShippingRates(true);
+		$quote->getShippingAddress()->collectShippingRates();
+
+		$_rates = $quote->getShippingAddress()->getShippingRatesCollection();
+	
+		$shippingRates = array();
+		foreach ($_rates as $_rate):
+		
+		
+				if ($_rate instanceof Mage_Shipping_Model_Rate_Result_Error) {
+					$errors[$rate->getCarrierTitle()] = 1;
+					$price = -1; // error flag
+				} else {
+				
+					 if ($quote->getShippingAddress()->getFreeShipping()) {
+						$price = 0;
+					 } else {
+						 if ($shippingMethod == $_rate->getMethod()) {  
+							$price = $_rate->getPrice();
+						 }
+					 }
+				
+					 if ($price) {
+						 $price = Mage::helper('tax')->getShippingPrice($price, false, $quote);
+					 }
+				 
+					//unset($errors[$rate->getCarrierTitle()]);
+					
+				}
+		endforeach;
+		$quote->getShippingAddress()->setCountryId($bkCountryId)
+				->setCity($bkCity)
+				->setPostcode($bkPostcode)
+				->setRegionId($bkRegionId)
+				->setRegion($bkRegion)
+				->setCollectShippingRates(true)->collectShippingRates();
+
+    		return $price;
+
+	}
+	
 	
 }

@@ -57,7 +57,7 @@ if(!$session->getQuote()->getAllVisibleItems()){
         $itemPrice = '';
         foreach ($session->getQuote()->getAllVisibleItems() as $item) {
             
-            if(strstr($this->buildItemDescription($item), "Gift Certificate")) {
+            if(strstr($this->buildItemDescription($item), "Gift C")) {
                 $output .= "<input type=\"hidden\" name=\"GiftStatus\" class=\"GiftStatus\" value=\"1\"/>\n";
                 break;
             }
@@ -83,9 +83,32 @@ if(!$session->getQuote()->getAllVisibleItems()){
                     }
                 }
             }
-            $output .= "<input type=\"hidden\" name=\"ItemSKU$i\" value=\"".$this->htmlEscape($item->getSku())."\"/>\n";
+
+			$item_sku = $item->getSku();
+			$item_id = $item->getId();
+			$child_id = Mage::getModel('catalog/product')->getIdBySku($item_sku);		
+			$child_product = Mage::getModel('catalog/product')->loadByAttribute('sku', $item_sku);
+			$parentId = Mage::getResourceSingleton('catalog/product_type_configurable')->getParentIdsByChild($child_id);         //for configurable products		
+			$final_product_image = '';
+			if(isset($parentId[0]) && $parentId[0]!='' && $item->getImage()=='')
+			{			
+				$parent_product = Mage::getModel('catalog/product')->load($parentId[0]);
+				$product_sku = $parent_product->getSku();
+				$parent_product_image = Mage::helper('catalog/image')->init($parent_product, 'thumbnail');
+				$final_product_image = $parent_product_image;
+			}else{
+				$product_id_by_sku = Mage::getModel('catalog/product')->getIdBySku($item->getSku());
+				$product_sku = $item->getSku();				
+				$product = Mage::getModel('catalog/product')->load($product_id_by_sku);
+				$final_product_image = Mage::helper('catalog/image')->init($product, 'thumbnail');
+			}		
+
+			$product = Mage::getModel('catalog/product')->load($child_id);
+			$finalPriceExcludingTax = $this->helper('tax')->getPrice($product, $product->getFinalPrice());
+
+            $output .= "<input type=\"hidden\" name=\"ItemSKU$i\" value=\"".$product_sku."\"/>\n";
             $output .= "<input type=\"hidden\" name=\"ItemQuantity$i\" value=\"".$item->getQty()."\"/>\n";
-            $output .= "<input type=\"hidden\" name=\"ItemPrice$i\" value=\"".$item->getPrice()."\"/>\n";
+            $output .= "<input type=\"hidden\" name=\"ItemPrice$i\" value=\"".$finalPriceExcludingTax."\"/>\n";
             
             $itemPrice = ($item->getPrice()*$item->getQty());
             $cartTotal += $itemPrice;
@@ -111,7 +134,7 @@ if(!$session->getQuote()->getAllVisibleItems()){
         
         <input type="hidden" name="p" value="<?php echo $this->formatCompany(Mage::getStoreConfig('checkout/internationalcheckout/name_of_company'))?>" />
         <input type="hidden" name="shipping_method" value="<?php echo trim(Mage::getStoreConfig("checkout/internationalcheckout/shipping_method"))?>" /> 
-        <input type="hidden" name="external_domesticshipping" value="<?php echo $this->shippingPrice();?>" />
+        <input type="hidden" name="external_domesticshipping" value="<?php echo $this->shippingPrice(); //$this->shippingPriceModified() ?>" /> 
         <input type="hidden" name="Discount" value="<?php echo Mage::getStoreConfig('checkout/internationalcheckout/discount')?>" />
         <?php
         $address = $session->getQuote()->getShippingAddress();

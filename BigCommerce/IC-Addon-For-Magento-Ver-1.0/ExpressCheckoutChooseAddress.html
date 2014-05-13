@@ -1,0 +1,21 @@
+<!--------------------------------****************************************************************************---------------------------------->
+<!--------------------------                                                                                               --------------------->
+<!--------------------------   Please use this code at the end of page if the code for dynamic shipping charges is used    --------------------->
+<!--------------------------                                                                                               --------------------->
+<!--------------------------------****************************************************************************---------------------------------->
+
+<script type="text/javascript">
+$(document).ready(function(){
+	stateElement1 = document.getElementById('FormField_12').selectedIndex;
+	stateElement2 = document.getElementById('FormField_22').selectedIndex;
+	zipCode1 = document.getElementById('FormField_13').value;
+	zipCode2 = document.getElementById('FormField_23').value;
+
+	if(stateElement1 == 12 && zipCode1 == 91406 && stateElement2 == 12 && zipCode2 == 91406){
+		document.getElementById('FormField_12').selectedIndex = 0;
+		document.getElementById('FormField_22').selectedIndex = 0;
+		document.getElementById('FormField_13').value = '';
+		document.getElementById('FormField_23').value = '';
+	}
+});
+</script>
