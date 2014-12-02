@@ -2,44 +2,47 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 %%Panel.HTMLHead%%
 <body>
-    <script type="text/javascript" src="%%GLOBAL_ShopPath%%/javascript/cart.js?%%GLOBAL_JSCacheToken%%"></script>
-    <div id="Container">
-    %%Panel.Header%%
-
-    <div id="Wrapper">
-        %%Panel.WrapperBanner%%
-        %%Panel.CartHeader%%
-        %%Panel.CartStatusMessage%%
-        %%Panel.CartContent%%
-        <!--Starts International Checkout integration code-->
-        <div style="display:none" id="noCart"><p class="InfoMessage"><strong>There are no products in your cart.</strong></p><br><br><a href="/">Continue Shopping</a>.</div>
-        <div>
-	        <div style=" width:100%; text-align:center; font-size:12px;height:500px" align="center" id="loading">Loading......</div>
-            <form id="icForm" name="icFrom" action="https://www.internationalcheckout.com/cart.php" class="icForm" method="post" target="icIframe"></form>
-            <div class="IC" id="IC" style="display: none;"></div>
-        </div>
+<script type="text/javascript" src="%%GLOBAL_ShopPath%%/javascript/cart.js?%%GLOBAL_JSCacheToken%%"></script>
+<div id="Container"> %%Panel.Header%%
+  %%Panel.CartHeader%%
+  %%Panel.CartStatusMessage%%
+  %%Panel.CartContent%%
+  <div id="Wrapper"> %%Panel.WrapperBanner%% 
+    <!--Starts International Checkout integration code-->
+    <div style="display:none" id="noCart">
+      <p class="InfoMessage"><strong>There are no products in your cart.</strong></p>
+      <br>
+      <br>
+      <a href="/">Continue Shopping</a>.</div>
+    <div>
+      <div style=" width:100%; text-align:center; font-size:12px;height:500px" align="center" id="loading">Loading......</div>
+      <form id="icForm" name="icFrom" action="https://www.internationalcheckout.com/cart.php" class="icForm" method="post" target="icIframe">
+      </form>
+      <div class="IC" id="IC" style="display: none;"></div>
+      <div class="IC_sucess" id="IC_sucess" style="display: none;"></div>
     </div>
-    <!--
+  </div>
+  <!--
     ******************************************************************
     //		 Please modify css here according to your store's  		//
     //			  theme to show the Ic page on full width			//
     ******************************************************************
     -->
-    <style>
+  <style>
 	.CartContents Stylize General, #content, #CartHeader, #CartContent, .BlockContent, #Outer p{
 		display:none;
 	}
 	</style>
-    
-    <!--Starts International Checkout integration code-->
-    <script type="text/javascript">
+  
+  <!--Starts International Checkout integration code--> 
+  <script type="text/javascript">
 
-		var pValue = "yourhealth"; //Please set the p value of store provided by International Checkout
+		var pValue = "test"; //Please set the p value of store provided by International Checkout
 
         $(document).ready(function() {
+
                 count=0;
-				
-               	
+				var totalPrice = 0;
                 $('.CartList >li').each(function() {
                     count=count+1;
 				
@@ -93,8 +96,7 @@
 					// Cart Status
                     jQuery("#icForm").append('<input type="hidden" class="cartStatus" name="cartStatus" value="1" />');
             	});
-				if(count >0){
-				 
+                if(count >0){
                     $('#icForm').append('<input id="p" name="p" type="hidden" value="' + pValue +'" />'); /*Set the p value of your store*/
 					//-------------------------------------**************************--------------------------------//
 					//		Activate this code if store is willing to pass coupon codes to International Checkout    //
@@ -114,74 +116,32 @@
                         $('#icForm').append('<input id="coupon_discount" name="coupon_discount" type="hidden" value="'+coupon_discount+'" />');
                     }*/
 					//-------------------------------------Ends Coupon Code Support Coding--------------------------------//
+					$('#icForm').append('<input id="external_domesticshipping" name="external_domesticshipping" type="hidden" value="" />');
+					$('#icForm').append('<input id="shipping_method" name="shipping_method" type="hidden" value="" />');
 					
-					$.ajax({
-                            url: '/remote.php',
-                            type: 'post',
-                            data: {
-                                w: 'getShippingQuotes',
-                                countryId: '226',
-                                stateId: '12',
-                                stateName: '',
-                                zipCode: '91406'
-                            },
-							cache :false,
-                            success: function(data)
-                            {
-                                $('.IC').html(data);
-                                flag = 1;
-                                temp =0;
-                                price = 0;
-                                temp_shipping ='';
-                                shiping =0;
-                                $('.IC').find(' table >tbody >tr').each(function() {
-                                        $(this).find('td').each(function() {
-                                            if($(this).find('label >input').attr('name') == 'selectedShippingMethod'){
-                                                temp_shipping = $(this).find('label').html().replace(/<.*?>/g, '');
-                                            }
-                                            if($(this).hasClass('Price')){
-                                                temp =parseFloat($(this).find('em').html().replace("$",""));
-                                            }
-                                            if(flag == 1){
-                                                if($(this).hasClass('Price')){
-                                                    price = parseFloat($(this).find('em').html().replace("$",""));
-                                                    shiping = temp_shipping;
-                                                    flag = 2;
-                                                }
-                                            }
-                                            if(temp < price){
-                                                price = temp;shiping = temp_shipping;
-                                            }
-                                        });
-                                    });
-                                $('#icForm').append('<input id="external_domesticshipping" name="external_domesticshipping" type="hidden" value="'+price+'" />');
-								$('#icForm').append('<input id="shipping_method" name="shipping_method" type="hidden" value="'+shiping+'" />');
-								
-								$("#Wrapper").append('<iframe style="display:none; min-height:850" name="icIframe" id="icIframe" src="javascript:parent.getFrameHTML();" frameborder="0" align="center" width="100%" scrolling="auto" height="850">Your Browser Does Not upport Frames</iframe>');
-								document.getElementById('icIframe').src = "https://www.internationalcheckout.com/cart.php?ver="+Math.random();
-								document.getElementById('icForm').submit();
-								$('#icIframe').ready(function(){
-									// Set a time interval to laod iframe, remove Ic Form and hide Loading text.	
-									 setTimeout(function() {
-										$("#icIframe").css("display","block");
-										$("#loading").css("display","none");
-										$("#icForm").remove();
-									}, 5000);
-						
-								});
-			                }
-						}); 	
+					if($('#icForm').html()!='' && $(".giftCard") && $(".giftCard").val() != '1'){
+						$("#Wrapper").append('<iframe style="display:none; min-height:850" name="icIframe" id="icIframe" src="javascript:parent.getFrameHTML();" frameborder="0" align="center" width="100%" scrolling="auto" height="850">Your Browser Does Not upport Frames</iframe>');
+						document.getElementById('icForm').submit();
+						$('#icIframe').ready(function(){
+							// Set a time interval to laod iframe, remove Ic Form and hide Loading text.	
+							 setTimeout(function() {
+								$("#icIframe").css("display","block");
+								$("#loading").css("display","none");
+								$("#icForm").remove();
+							}, 5000);
 				
-                }else if(jQuery(".cartStatus").val() != 1 && GiftCertInCart == false){
+						});
+					}else if($(".giftCard") && $(".giftCard").val() == '1'){
+						alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout.'); 
+						window.parent.location.href = '/cart.php'; 
+					}else{
+						alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout.');
+						window.parent.location.href = '/cart.php';}  
+          		}else{
 					$('#noCart').css("display","block");
 					$('#loading').css("display","none");
-                    alert('Please add items to the cart.');
-				}else if(GiftCertInCart == true){
-				    alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout.');
-                    window.parent.location.href = '/cart.php'; 
-                }
-
-              });
+				}
+        });
 	function formatAll(txt){
 		txt = replaceAll(txt,"'","&acute;");
 		txt = replaceAll(txt,'"',"&acute;&acute;");
@@ -193,9 +153,8 @@
 		}
 		return str;
 	}
-	</script>
-    <!--Ends International Checkout integration code-->
-    %%Panel.Footer%%
-</div>
+	</script> 
+  <!--Ends International Checkout integration code--> 
+  %%Panel.Footer%% </div>
 </body>
 </html>

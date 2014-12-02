@@ -3,34 +3,37 @@
 %%Panel.HTMLHead%%
 <body>
 <script type="text/javascript" src="%%GLOBAL_ShopPath%%/javascript/cart.js?%%GLOBAL_JSCacheToken%%"></script>
-<div id="Container">
-    %%Panel.Header%%
-	%%Panel.CartHeader%%
-    %%Panel.CartStatusMessage%%
-    %%Panel.CartContent%%
-    <div id="Wrapper">
-        %%Panel.WrapperBanner%%
-        <!--Starts International Checkout integration code-->
-        <div style="display:none" id="noCart"><p class="InfoMessage"><strong>There are no products in your cart.</strong></p><br><br><a href="/">Continue Shopping</a>.</div>
-        <div>
-	        <div style=" width:100%; text-align:center; font-size:12px;height:500px" align="center" id="loading">Loading......</div>
-            <form id="icForm" name="icFrom" action="https://www.internationalcheckout.com/cart.php" class="icForm" method="post" target="icIframe"></form>
-        </div>
+<div id="Container"> %%Panel.Header%%
+  %%Panel.CartHeader%%
+  %%Panel.CartStatusMessage%%
+  %%Panel.CartContent%%
+  <div id="Wrapper"> %%Panel.WrapperBanner%% 
+    <!--Starts International Checkout integration code-->
+    <div style="display:none" id="noCart">
+      <p class="InfoMessage"><strong>There are no products in your cart.</strong></p>
+      <br>
+      <br>
+      <a href="/">Continue Shopping</a>.</div>
+    <div>
+      <div style=" width:100%; text-align:center; font-size:12px;height:500px" align="center" id="loading">Loading......</div>
+      <form id="icForm" name="icFrom" action="https://www.internationalcheckout.com/cart.php" class="icForm" method="post" target="icIframe">
+      </form>
     </div>
-    <!--
+  </div>
+  <!--
     ******************************************************************
     //		 Please modify css here according to your store's  		//
     //			  theme to show the Ic page on full width			//
     ******************************************************************
     -->
-    <style>
+  <style>
 	.CartContents Stylize General, #content, #CartHeader, #CartContent, .BlockContent, #Outer p{
 		display:none;
 	}
 	</style>
-    
-    <!--Starts International Checkout integration code-->
-    <script type="text/javascript">
+  
+  <!--Starts International Checkout integration code--> 
+  <script type="text/javascript">
 
 		var pValue = "yourhealth"; //Please set the p value of store provided by International Checkout
 
@@ -70,9 +73,12 @@
                                             $(this).find('td').each(function() {
                                                 if($(this).find('label')){
                                                     temp='';
+													var pattSize=new RegExp("^[si|Si][a-zA-Z:/]+$");
+													var pattColor=new RegExp("^[colo|Colo][a-zA-Z:/]+$");
+
                                                     if($(this).find('label').html()!=null){
                                                         temp =  $(this).find('label').html().replace(/[^a-zA-Z 0-9]+/g,'');
-                                                        if(temp!='Size' && temp!='Color'){
+                                                         if(!pattSize.test(temp) && !pattColor.test(temp)){
                                                             attr_value = $(this).next().find('span').html().replace(/"/gi, "&rdquo;");
                                                             attr_value = attr_value.replace(/'/gi, "&acute;");
                                                             attributes = attributes + '&nbsp;['+temp+':'+attr_value+']';
@@ -91,18 +97,18 @@
                                             });
                                         });
                                     }
-                                    if($(this).find('a').html() =='' && $(this).find('a').html()!='Edit'){
+                                    if($(this).find('a').html() =='' && $(this).find('a').text().search('Edit') == -1){
                                         flag = 1;
                                         desc = 'Description not available';
                                         desc = desc+attributes;
                                         $('#icForm').append('<input id="ItemDescription'+count+'" name="ItemDescription'+count+'" type="hidden" value="'+formatAll(desc)+'" />');
-                                    }else if($(this).find('a').html()!='' && $(this).find('a').html()!='Edit'){
+                                    }else if($(this).find('a').html()!='' && $(this).find('a').text().search('Edit') == -1){
                                         flag = 1;
                                         desc = $(this).find('a').html().replace(/'/gi, "&acute;");
                                         desc = desc.replace(/"/gi, "&rdquo;");
                                         desc = desc+attributes;
                                         $('#icForm').append('<input id="ItemDescription'+count+'" name="ItemDescription'+count+'" type="hidden" value="'+formatAll(desc)+'" />');
-                                    }else if ($(this).find('a').html()=='Edit'){
+                                    }else if ($(this).find('a').text().search('Edit') != -1){
                                         $('#icForm').append('<input id="giftCard" name="giftCard" class="giftCard" type="hidden" value="1" />');
                                     }
                                 }
@@ -141,6 +147,15 @@
                         $('#icForm').append('<input id="coupon_discount" name="coupon_discount" type="hidden" value="'+coupon_discount+'" />');
                     }*/
 					//-------------------------------------Ends Coupon Code Support Coding--------------------------------//
+	
+					//-------------------------------------**************************--------------------------------//
+					//		Activate this code if store is willing to pass discount to International Checkout    //
+					//-------------------------------------**************************--------------------------------//		 
+/*					if(jQuery("table.CartContents tbody tr.SubTotal td:contains('Discount')")){
+							jQuery("#icForm").append("<input type=hidden name=Discount value=" +  jQuery("td:contains('Discount')").next().text().replace("-$", "") + ">");
+					}                                    
+*/					//-------------------------------------Ends Discount Support Coding--------------------------------//
+
 					$('#icForm').append('<input id="external_domesticshipping" name="external_domesticshipping" type="hidden" value="" />');
 					$('#icForm').append('<input id="shipping_method" name="shipping_method" type="hidden" value="" />');
 					
@@ -162,6 +177,9 @@
 					}else{
 						alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout.');
 						window.parent.location.href = '/cart.php';}  
+				}else if($(".giftCard") && $(".giftCard").val() == '1'){
+						alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout.'); 
+						window.parent.location.href = '/cart.php'; 
           		}else{
 					$('#noCart').css("display","block");
 					$('#loading').css("display","none");
@@ -178,9 +196,8 @@
 		}
 		return str;
 	}
-	</script>
-    <!--Ends International Checkout integration code-->
-    %%Panel.Footer%%
-</div>
+	</script> 
+  <!--Ends International Checkout integration code--> 
+  %%Panel.Footer%% </div>
 </body>
 </html>
