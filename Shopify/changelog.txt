@@ -1,0 +1,9 @@
+2.0 - 11/27/2014 
+
+
+
+=== New Features ===	
+
++ Add new feature to don't pass gift certificates to Ic.
+
+=== Fixed ===

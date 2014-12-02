@@ -7,8 +7,15 @@
 <form name="icForm" id="icForm" method="post" action="https://www.internationalcheckout.com/cart.php" target="icIframe">
     {% for item in cart.items %}  
                  
+            <!-- Check Gift Certificate in the cart
+            ============================================= -->
+            {% if item.product.description contains 'Gift Cards' % }
+            	<input id="giftCard" name="giftCard" class="giftCard" type="hidden" value="1" />
+            {% endif %}
+
+
             {% if item.product.description !=  empty %}
-                <input type="hidden" class="ItemDescription" id="ItemDescription{{ forloop.index }}" name='ItemDescription{{ forloop.index }}' value="{{ item.title | escape }} [ {{ item.product.description | strip_html | replace: '"', '&acute;&acute;'  }}]" />
+                <input type="hidden" class="ItemDescription" id="ItemDescription{{ forloop.index }}" name='ItemDescription{{ forloop.index }}' value="{{ item.title | escape | replace: '"', '&acute;&acute;' }} " />
             {% else %}
                 <input type="hidden" class="ItemDescription" id="ItemDescription{{ forloop.index }}" name='ItemDescription{{ forloop.index }}' value="{{ item.title | escape | replace: '"', '&acute;&acute;'}}" />
             {% endif %}
@@ -27,7 +34,7 @@
         <input type="hidden" name="shipping_method" id="shipping_method" value="" />
         
 		<!-- For Flat Rate Shipping charges, add the amount in 'value' attribute
-		============================================= -->
+		======================================================================== -->
         <input type="hidden" name="external_domesticshipping" id="external_domesticshipping" value="" />
         
 </form>
@@ -57,8 +64,15 @@
 	var price =  new Array();
 	$(document).ready(function () {
 		if(document.getElementById('cartStatus')){
+			
 			document.getElementById('noItem').style.display = '';
-		}else{    
+		
+		}else if($(".giftCard") && $(".giftCard").val() == '1'){
+        
+			alert('Gift Certificate is not available for international orders. Please remove Gift Certificate from shopping cart before proceeding with International Checkout.'); 
+        	window.location.href = '/cart'; 
+		
+		}else{
 			makeform();
 		}
 	});
